@@ -29,22 +29,27 @@ public:
 
   void push(K const &k, V const &v) {
     modify();
-
+    // add to map
+    // add to queue
   }
 
   void pop() {
     modify();
-
+    // remove from map
+    // remove from queue
   }
 
   void pop(K const &) {
     modify();
-
+    // remove from map
+    // remove from queue
   }
 
   void move_to_back(K const &k) {
     modify();
-
+    // push to back of queue (list)
+    // push to back of queue inside map
+    // erase from queues 
   }
 
   std::pair<K const &, V &> front();
@@ -63,7 +68,7 @@ public:
   k_iterator k_end();
 private:
   using queue_t = std::list<std::pair<K, V>>;
-  using k_to_iterators_t = std::map<K, std::queue<queue_t::iterator>>;
+  using k_to_iterators_t = std::map<K, std::dequeue<queue_t::iterator>>;
 
   std::shared_ptr<queue_t> queue;
   std::shared_ptr<k_to_iterators_t> k_to_iterators;
