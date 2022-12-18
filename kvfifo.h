@@ -118,10 +118,36 @@ public:
     return data->queue.back();
   }
   
-  std::pair<K const &, V &> first(K const &key);
-  std::pair<K const &, V const &> first(K const &key) const;
-  std::pair<K const &, V &> last(K const &key);
-  std::pair<K const &, V const &> last(K const &key) const;
+  std::pair<K const &, V &> first(K const &key) {
+    auto queue_it = data->k_to_iterators->find(key);
+    if (queue_it == data->k_to_iterators->end()) {
+      throw std::invalid_argument("key not found");
+    }
+    return queue_it->front();
+  }
+
+  std::pair<K const &, V const &> first(K const &key) const {
+    auto queue_it = data->k_to_iterators->find(key);
+    if (queue_it == data->k_to_iterators->end()) {
+      throw std::invalid_argument("key not found");
+    }
+    return queue_it->front();
+  }
+  std::pair<K const &, V &> last(K const &key) {
+    auto queue_it = data->k_to_iterators->find(key);
+    if (queue_it == data->k_to_iterators->end()) {
+      throw std::invalid_argument("key not found");
+    }
+    return queue_it->back();
+  }
+
+  std::pair<K const &, V const &> last(K const &key) const {
+    auto queue_it = data->k_to_iterators->find(key);
+    if (queue_it == data->k_to_iterators->end()) {
+      throw std::invalid_argument("key not found");
+    }
+    return queue_it->back();
+  }
   
   size_t size() const noexcept {
     return data->queue.size();
