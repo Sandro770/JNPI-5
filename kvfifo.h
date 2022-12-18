@@ -34,41 +34,89 @@ public:
   }
 
   void push(K const &k, V const &v) {
-    // modify();
-    // (*queue).push_back(std::make_pair(k, v));
-    // queue_t::iterator list_it = (*queue).end();
-    // list_it--;
-    // k_to_iterators_t::iterator map_it = (*k_to_iterators).find(k);
+    try {
+      size_t size = data->queue.size();
+      data->queue.push_back(pair<K, V>(k, v));
+      if (size == data->queue.size()) {
+        throw std::exception("addition to list failed"); //think which exception to use
+      }
+    }
+    catch (const std::exception& e) {
+      throw e;
+    }
 
-    // if (map_it == (*k_to_iterators).end()) { //probably should dynamically allocate those and dealocate during pop
-    //   std::deque<queue_t::iterator> new_element;
-    //   new_element.push_back(list_it);
-    //   (*k_to_iterators).insert(new_element);
-    // }
-    // else {
-    //   (*map_it).push_back(list_it);
-    // }
+    it_t list_it = std::prev(data->queue.end()); // throws only when container is empty which we have a guarantee it isn't i think
+    std::deque<queue_t::iterator>* new_element = NULL;
+    try {
+      k_to_iterators_t::iterator map_it = data->k_to_iterators.find(k);
+
+      if (map_it == data->k_to_iterators.end()) {
+        new_element = new std::deque<queue_t::iterator>();
+        if (new_element == NULL) {
+          throw std::exception("creation of new element of map failed"); //think if needed
+        }
+        (*new_element).push_back(list_it);
+        if ((*new_element).size() != 1) {
+          throw std::exception("addition to map element failed");
+        }
+        data->k_to_iterators.insert(*new_element);
+        delete(new_element);
+      }
+      else {
+        size_t size = (*map_it).size();
+        (*map_it).push_back(list_it);
+        if (size != (*map_it).size()) {
+          throw std::exception("addition to map element failed");
+        }
+      }
+    }
+    catch (const std::exception& e) {
+      if (new_element != NULL) {
+        delete(new_element);
+      }
+      data->queue.erase(list_it);
+      throw e;
+    }
   }
 
   void pop() {
-    // modify();
-    // if ((*queue).empty()) {
-    //   throw std::invalid_argument("queue is empty");
-    // }
+    if (data->queue.empty()) {
+      throw std::invalid_argument("queue is empty");
+    }
+    try {
+      it_t list_it = data->k_to_iterators[data->queue.front()].front();
+      if (data->k_to_iterators[data->queue.front()].size() == 1) {
+        data->k_to_iterators.erase(data->queue.front());
+      }
+      else {
+        data->k_to_iterators[data->queue.front()].erase(data->k_to_iterators[data->queue.front()].begin());
+      }
+      data->queue.erase(list_it);
 
-    // queue_t::iterator list_it = (*queue).begin();
-    // k_to_iterators_t::iterator map_it = (*k_to_iterators).find((*list_it).first);
-    // //can add assertion/ error if map_it == end()
-    // (*map_it).erase((*map_it).begin());
-    // if ((*map_it).size() == 0) { //dealocate deque on map_it (?)
-    //   (*k_to_iterators).erase(map_it);
-    // }
+    }
+    catch (const std::exception& e) {
+      throw e;
+    }
   }
 
-  void pop(K const &) {
-    // modify();
-    // // remove from map
-    // // remove from queue
+  void pop(K const &k) {
+    try {
+      k_to_iterators_t::iterator map_it = data->k_to_iterators.find(k);
+      if (map_it == data->k_to_iterators.end()) {
+        throw std::invalid_argument();
+      }
+      it_t list_it = (*map_it).front();
+      if ((*map_it).size() == 1) {
+        data->k_to_iterators.erase(map_it);
+      }
+      else {
+        (*map_it).erase((*map_it).begin());
+      }
+      data->queue.erase(list_it); // no exception
+    }
+    catch (const std::exception& e) {
+      throw e;
+    }
   }
 
   void move_to_back(K const &k) {
