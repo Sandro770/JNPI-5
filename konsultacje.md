@@ -3,3 +3,5 @@
 3) jeśli operacja się nie uda to nie powinno dojść do copy on write 
 4) komentarze czemu noexception
 5) nie można trzymać dwóch kopii klucza, trzeba wskaźnik albo referencje
+6) #include <memory>, #include <map>, #include <queue>
+7) zrobić guarda
