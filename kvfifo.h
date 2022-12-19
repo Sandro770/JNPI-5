@@ -46,12 +46,12 @@ public:
     }
 
     it_t list_it = std::prev(data->queue.end()); // throws only when container is empty which we have a guarantee it isn't i think
-    std::deque<queue_t::iterator>* new_element = NULL;
+    
     try {
       k_to_iterators_t::iterator map_it = data->k_to_iterators.find(k);
 
       if (map_it == data->k_to_iterators.end()) {
-        new_element = new std::deque<queue_t::iterator>();
+        std::deque<queue_t::iterator> new_element;
         if (new_element == NULL) {
           throw std::exception("creation of new element of map failed"); //think if needed
         }
@@ -60,7 +60,6 @@ public:
           throw std::exception("addition to map element failed");
         }
         data->k_to_iterators.insert(*new_element);
-        delete(new_element);
       }
       else {
         size_t size = (*map_it).size();
@@ -72,7 +71,6 @@ public:
     }
     catch (const std::exception& e) {
       if (new_element != NULL) {
-        delete(new_element);
       }
       data->queue.erase(list_it);
       throw e;
@@ -137,10 +135,15 @@ public:
     size_t moved = 0;
     deque_it_t::iterator deq_it = (*map_it).begin();
     try {
+      std::deque<queue_t::iterator> new_element;
+      k_iterator adding_helper = data->queue.end();
+      std::prev(adding_helper);
       while (moved + 1 < size) {
         data->queue.push_back(*deq_it);
         moved++;
         deq_it = std::next(deq_it);
+        adding_helper = std::next(adding_helper);
+        new_element.push_back(adding_helper);
       }
     }
     catch (const std::exception& e) {
@@ -148,27 +151,18 @@ public:
       std::prev(removing_helper);
       while (moved > 0) {
         data->queue.erase(removing_helper);
-        std::prev(removing_helper);
+        removing_helper = std::prev(removing_helper);
         moved--;
       }
       throw e;
     }
-    // modify();
-    // k_to_iterators_t::iterator map_it = (*k_to_iterators).find((*list_it).first);
-
-    // if (map_it == (*k_to_iterators).end()) {
-    //   throw std::invalid_argument("key not found");
-    // }
-
-    // for (std::deque<queue_t::iterator>::iterator queue_it = (*map_it).begin();
-    //     queue_it < (*map_it).end(); queue_it++) { //should work
-    //   std::pair<K,V> moved = *queue_it;
-    //   (*queue).erase(queue_it);
-    //   (*queue).push_back(moved);
-    //   queue_t::iterator list_it = (*queue).end();
-    //   list_it--;
-    //   *queue_it = list_it;
-    // }
+    modify_and_goback(); 
+    std::swap(*map_it, new_element);
+    std::deque<queue_t::iterator>::iterator helper = new_element.begin();
+    for (size_t i = 0; i < new_element.size(); i++) {
+      data->queue.erase(helper);
+      helper = std::next(helper);
+    }
   }
 
   std::pair<K const &, V &> front() {
