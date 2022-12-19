@@ -77,6 +77,7 @@ public:
       data->queue.erase(list_it);
       throw e;
     }
+    modify_and_rollback();
   }
 
   void pop() {
@@ -84,12 +85,17 @@ public:
       throw std::invalid_argument("queue is empty");
     }
     try {
-      it_t list_it = data->k_to_iterators[data->queue.front()].front();
-      if (data->k_to_iterators[data->queue.front()].size() == 1) {
-        data->k_to_iterators.erase(data->queue.front());
+      k_to_iterators_t::iterator map_it = data->k_to_iterators.find(data->queue.front());
+      modify()
+      if (map_it == data->k_to_iterators.end()) {
+        throw std::invalid_argument();
+      }
+      it_t list_it = (*map_it).front();
+      if ((*map_it).size() == 1) {
+        data->k_to_iterators.erase(map_it);
       }
       else {
-        data->k_to_iterators[data->queue.front()].erase(data->k_to_iterators[data->queue.front()].begin());
+        (*map_it).erase((*map_it).begin());
       }
       data->queue.erase(list_it);
 
@@ -105,6 +111,7 @@ public:
       if (map_it == data->k_to_iterators.end()) {
         throw std::invalid_argument();
       }
+      modify();
       it_t list_it = (*map_it).front();
       if ((*map_it).size() == 1) {
         data->k_to_iterators.erase(map_it);
@@ -120,6 +127,32 @@ public:
   }
 
   void move_to_back(K const &k) {
+    try {
+      k_to_iterators_t::iterator map_it = (*k_to_iterators).find(k);
+    }
+    catch (const std::exception& e) {
+      throw e;
+    }
+    size_t size = (*map_it).size();
+    size_t moved = 0;
+    deque_it_t::iterator deq_it = (*map_it).begin();
+    try {
+      while (moved + 1 < size) {
+        data->queue.push_back(*deq_it);
+        moved++;
+        deq_it = std::next(deq_it);
+      }
+    }
+    catch (const std::exception& e) {
+      k_iterator removing_helper = data->queue.end();
+      std::prev(removing_helper);
+      while (moved > 0) {
+        data->queue.erase(removing_helper);
+        std::prev(removing_helper);
+        moved--;
+      }
+      throw e;
+    }
     // modify();
     // k_to_iterators_t::iterator map_it = (*k_to_iterators).find((*list_it).first);
 
