@@ -108,28 +108,39 @@ public:
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    return deref(data->queue.front());
+    auto entry = data->queue.front();
+
+    return std::pair<K const &, V &>(*(entry.first), entry.second);
   }
 
   std::pair<K const &, V const &> front() const {
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    return deref(data->queue.front());
+
+    auto entry = data->queue.front();
+
+    return std::pair<K const &, V const &>(*(entry.first), entry.second);
   }
 
   std::pair<K const &, V &> back() {
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    return deref(data->queue.back());
+
+    auto entry = data->queue.back();
+
+    return std::pair<K const &, V &>(*(entry.first), entry.second);
   }
 
   std::pair<K const &, V const &> back() const {
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    return deref(data->queue.back());
+
+    auto entry = data->queue.back();
+
+    return std::pair<K const &, V const &>(*(entry.first), entry.second);
   }
   
   std::pair<K const &, V &> first(K const &key) {
@@ -295,8 +306,14 @@ private:
     }
   };
 
-  auto deref(auto &entry) {
-    return {*(entry.first), entry.second};
+  std::pair<K const &, V const &> deref1(std::pair<K *, V const &> entry) {
+    return std::pair<K const &, V const &>(*entry.first, entry.second);
+    // return  std::pair<K const &, decltype(entry.second)>(*(entry.first), entry.second);
+  }
+
+  std::pair<K const &, V &> deref2(std::pair<K *, V &> entry) {
+    return std::pair<K const &, V &>(*entry.first, entry.second);
+    // return  std::pair<K const &, decltype(entry.second)>(*(entry.first), entry.second);
   }
 
   std::shared_ptr<data_t> data;
