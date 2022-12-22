@@ -12,8 +12,6 @@
 #include <stdexcept>
 #include <iterator>
 
-using namespace std;
-
 template <typename K, typename V> 
 class kvfifo{
 public:
@@ -24,7 +22,7 @@ public:
   
   // Create wrapper iterator for k_to_iterators_t iterator  
 
-  class k_iterator : iterator<bidirectional_iterator_tag, K> {
+  class k_iterator : std::iterator<std::bidirectional_iterator_tag, K> {
   public:
     using difference_type = k_to_iterators_t::iterator::difference_type;
     using value_type = K;
@@ -215,7 +213,7 @@ public:
     return data->queue->end();
   }
 private:
-  // static_assert(std::bidirectional_iterator<k_iterator>);
+  static_assert(std::bidirectional_iterator<k_iterator>);
 
   struct data_t {
     queue_t queue;
@@ -223,7 +221,7 @@ private:
     bool given_reference = false;
 
   void push(K const &k, V const &v) {
-    queue.push_back(pair<K*, V>(NULL, v));
+    queue.push_back(std::pair<K*, V>(NULL, v));
         
     it_t list_it = std::prev(queue.end()); // throws only when container is empty which we have a guarantee it isn't i think
     
@@ -231,8 +229,8 @@ private:
       typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
 
       if (map_it == k_to_iterators.end()) {
-        typename std::deque<typename queue_t::iterator> new_element;
-        new_element.push_back(list_it);
+        auto new_element = typename std::pair<K, std::deque<typename queue_t::iterator>>(k, std::deque<typename queue_t::iterator>());
+        new_element.second.push_back(list_it);
         list_it->first = &(k_to_iterators.insert(new_element).first->first);
       } else {
         size_t size = (*map_it).size();
@@ -294,8 +292,8 @@ private:
     std::shared_ptr<data_t> &orig_data;
 
     Guard(std::shared_ptr<data_t> &data_ptr) : orig_data(data_ptr) {
-      if (data_ptr->use_count() > 1) {
-        data = make_shared(*data_ptr);
+      if (data_ptr.use_count() > 1) {
+        data = std::make_shared<data_t>(*data_ptr);
       } else {
         data = data_ptr;
       }
@@ -305,16 +303,6 @@ private:
       swap(data, orig_data);
     }
   };
-
-  std::pair<K const &, V const &> deref1(std::pair<K *, V const &> entry) {
-    return std::pair<K const &, V const &>(*entry.first, entry.second);
-    // return  std::pair<K const &, decltype(entry.second)>(*(entry.first), entry.second);
-  }
-
-  std::pair<K const &, V &> deref2(std::pair<K *, V &> entry) {
-    return std::pair<K const &, V &>(*entry.first, entry.second);
-    // return  std::pair<K const &, decltype(entry.second)>(*(entry.first), entry.second);
-  }
 
   std::shared_ptr<data_t> data;
 };
