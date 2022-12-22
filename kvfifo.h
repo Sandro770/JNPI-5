@@ -81,6 +81,140 @@ public:
   }
 
   void push(K const &k, V const &v) {
+    Guard g(data);
+    g.data->push(k, v);
+    g.accept();  
+  }
+
+  void pop() {
+    Guard g(data);
+    g.data->pop();
+    g.accept();
+  }
+
+  void pop(K const &k) {
+    Guard g(data);
+    g.data->pop(k);
+    g.accept();
+  }
+
+  void move_to_back(K const &k) {
+    Guard g(data);
+    g.data->move_to_back(k);
+    g.accept();
+  }
+
+  std::pair<K const &, V &> front() {
+    if (data->queue.empty()) {
+      throw std::invalid_argument("queue is empty");
+    }
+    return data->queue.front();
+  }
+
+  std::pair<K const &, V const &> front() const {
+    if (data->queue.empty()) {
+      throw std::invalid_argument("queue is empty");
+    }
+    return data->queue.front();
+  }
+
+  std::pair<K const &, V &> back() {
+    if (data->queue.empty()) {
+      throw std::invalid_argument("queue is empty");
+    }
+    return data->queue.back();
+  }
+
+  std::pair<K const &, V const &> back() const {
+    if (data->queue.empty()) {
+      throw std::invalid_argument("queue is empty");
+    }
+    return data->queue.back();
+  }
+  
+  std::pair<K const &, V &> first(K const &key) {
+    Guard g(data);
+
+    auto queue_it = g.data->k_to_iterators->find(key);
+    if (queue_it == g.data->k_to_iterators->end()) {
+      throw std::invalid_argument("key not found");
+    }
+
+    g.data->given_reference = true;
+    g.accept();
+    
+    return queue_it->front();
+  }
+
+  std::pair<K const &, V const &> first(K const &key) const {
+    auto queue_it = data->k_to_iterators->find(key);
+    if (queue_it == data->k_to_iterators->end()) {
+      throw std::invalid_argument("key not found");
+    }
+    return queue_it->front();
+  }
+
+  std::pair<K const &, V &> last(K const &key) {
+    Guard g(data);
+
+    auto queue_it = g.data->k_to_iterators->find(key);
+    if (queue_it == g.data->k_to_iterators->end()) {
+      throw std::invalid_argument("key not found");
+    }
+
+    g.data->given_reference = true;
+    g.accept();
+
+    return queue_it->back();
+  }
+
+  std::pair<K const &, V const &> last(K const &key) const {
+    auto queue_it = data->k_to_iterators->find(key);
+    if (queue_it == data->k_to_iterators->end()) {
+      throw std::invalid_argument("key not found");
+    }
+    return queue_it->back();
+  }
+  
+  size_t size() const noexcept {
+    return data->queue.size();
+  }
+  
+  bool empty() const noexcept {
+    return size() == 0;
+  }
+  
+  size_t count(K const &k) const {
+    auto queue_it = data->k_to_iterators->find(k);
+    if (queue_it == data->k_to_iterators->end()) {
+      return 0;
+    }
+    return queue_it->size();
+  }
+
+  void clear() {
+    data = std::make_shared<data_t>();
+  }
+
+  k_iterator k_begin() const noexcept {
+    return data->queue->begin();
+  } 
+
+  k_iterator k_end() const noexcept {
+    return data->queue->end();
+  }
+private:
+
+  
+  // static_assert(std::bidirectional_iterator<k_iterator>);
+
+  struct data_t {
+    queue_t queue;
+    k_to_iterators_t k_to_iterators;
+    bool given_reference = false;
+
+
+  void push(K const &k, V const &v) {
     // try {
     //   size_t size = data->queue.size();
     //   data->queue.push_back(pair<K, V>(k, v));
@@ -211,131 +345,6 @@ public:
     //   helper = std::next(helper);
     // }
   }
-
-  std::pair<K const &, V &> front() {
-    if (data->queue.empty()) {
-      throw std::invalid_argument("queue is empty");
-    }
-    return data->queue.front();
-  }
-
-  std::pair<K const &, V const &> front() const {
-    if (data->queue.empty()) {
-      throw std::invalid_argument("queue is empty");
-    }
-    return data->queue.front();
-  }
-
-  std::pair<K const &, V &> back() {
-    if (data->queue.empty()) {
-      throw std::invalid_argument("queue is empty");
-    }
-    return data->queue.back();
-  }
-
-  std::pair<K const &, V const &> back() const {
-    if (data->queue.empty()) {
-      throw std::invalid_argument("queue is empty");
-    }
-    return data->queue.back();
-  }
-  
-  std::pair<K const &, V &> first(K const &key) {
-    Guard g(data);
-
-    auto queue_it = g.data->k_to_iterators->find(key);
-    if (queue_it == g.data->k_to_iterators->end()) {
-      throw std::invalid_argument("key not found");
-    }
-
-    g.data->given_reference = true;
-    g.accept();
-    
-    return queue_it->front();
-  }
-
-  std::pair<K const &, V const &> first(K const &key) const {
-    auto queue_it = data->k_to_iterators->find(key);
-    if (queue_it == data->k_to_iterators->end()) {
-      throw std::invalid_argument("key not found");
-    }
-    return queue_it->front();
-  }
-
-  std::pair<K const &, V &> last(K const &key) {
-    Guard g(data);
-
-    auto queue_it = g.data->k_to_iterators->find(key);
-    if (queue_it == g.data->k_to_iterators->end()) {
-      throw std::invalid_argument("key not found");
-    }
-
-    g.data->given_reference = true;
-    g.accept();
-
-    return queue_it->back();
-  }
-
-  std::pair<K const &, V const &> last(K const &key) const {
-    auto queue_it = data->k_to_iterators->find(key);
-    if (queue_it == data->k_to_iterators->end()) {
-      throw std::invalid_argument("key not found");
-    }
-    return queue_it->back();
-  }
-  
-  size_t size() const noexcept {
-    return data->queue.size();
-  }
-  
-  bool empty() const noexcept {
-    return size() == 0;
-  }
-  
-  size_t count(K const &k) const {
-    auto queue_it = data->k_to_iterators->find(k);
-    if (queue_it == data->k_to_iterators->end()) {
-      return 0;
-    }
-    return queue_it->size();
-  }
-
-  void clear() {
-    data = std::make_shared<data_t>();
-  }
-
-  k_iterator k_begin() const noexcept {
-    return data->queue->begin();
-  } 
-
-  k_iterator k_end() const noexcept {
-    return data->queue->end();
-  }
-private:
-
-  
-  // static_assert(std::bidirectional_iterator<k_iterator>);
-
-  struct data_t {
-    queue_t queue;
-    k_to_iterators_t k_to_iterators;
-    bool given_reference = false;
-
-    void push(K const &k, V const &v) {
-    
-    }
-
-    void pop() {
-    
-    }
-
-    void pop(K const &k) {
-    
-    }
-
-    void move_to_back(K const &k) {
-      
-    }
   };
 
   // implement k_iterator
