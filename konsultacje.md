@@ -10,3 +10,4 @@
 10) zrobić te metody na funkcji implementującej
 11)   kvfifo(kvfifo const &other) : data(other.data) { } /// robić kopię w pewnych przypadkach
 12) nie używać new i delete
+13) k_iterator ma pozwalac przegladac zbior kluczy, nie listę 
