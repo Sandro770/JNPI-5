@@ -17,7 +17,7 @@ using namespace std;
 template <typename K, typename V> 
 class kvfifo{
 public:
-  using queue_t = std::list<std::pair<K&, V>>;
+  using queue_t = std::list<std::pair<K*, V>>;
   using it_t = queue_t::iterator;
   using deque_it_t = std::deque<it_t>;
   using k_to_iterators_t = std::map<K, deque_it_t>;
@@ -108,28 +108,28 @@ public:
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    return data->queue.front();
+    return deref(data->queue.front());
   }
 
   std::pair<K const &, V const &> front() const {
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    return data->queue.front();
+    return deref(data->queue.front());
   }
 
   std::pair<K const &, V &> back() {
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    return data->queue.back();
+    return deref(data->queue.back());
   }
 
   std::pair<K const &, V const &> back() const {
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    return data->queue.back();
+    return deref(data->queue.back());
   }
   
   std::pair<K const &, V &> first(K const &key) {
@@ -143,7 +143,7 @@ public:
     g.data->given_reference = true;
     g.accept();
     
-    return queue_it->front();
+    return deref(queue_it->front());
   }
 
   std::pair<K const &, V const &> first(K const &key) const {
@@ -151,7 +151,7 @@ public:
     if (queue_it == data->k_to_iterators->end()) {
       throw std::invalid_argument("key not found");
     }
-    return queue_it->front();
+    return deref(queue_it->front());
   }
 
   std::pair<K const &, V &> last(K const &key) {
@@ -165,7 +165,7 @@ public:
     g.data->given_reference = true;
     g.accept();
 
-    return queue_it->back();
+    return deref(queue_it->back());
   }
 
   std::pair<K const &, V const &> last(K const &key) const {
@@ -173,7 +173,7 @@ public:
     if (queue_it == data->k_to_iterators->end()) {
       throw std::invalid_argument("key not found");
     }
-    return queue_it->back();
+    return deref(queue_it->back());
   }
   
   size_t size() const noexcept {
@@ -204,8 +204,6 @@ public:
     return data->queue->end();
   }
 private:
-
-  
   // static_assert(std::bidirectional_iterator<k_iterator>);
 
   struct data_t {
@@ -213,50 +211,28 @@ private:
     k_to_iterators_t k_to_iterators;
     bool given_reference = false;
 
-
   void push(K const &k, V const &v) {
-    // try {
-    //   size_t size = data->queue.size();
-    //   data->queue.push_back(pair<K, V>(k, v));
-    //   if (size == data->queue.size()) {
-    //     throw std::exception("addition to list failed"); //think which exception to use
-    //   }
-    // }
-    // catch (const std::exception& e) {
-    //   throw e;
-    // }
-
-    // it_t list_it = std::prev(data->queue.end()); // throws only when container is empty which we have a guarantee it isn't i think
+    queue.push_back(pair<K*, V>(NULL, v));
+        
+    it_t list_it = std::prev(queue.end()); // throws only when container is empty which we have a guarantee it isn't i think
     
-    // try {
-    //   k_to_iterators_t::iterator map_it = data->k_to_iterators.find(k);
+    try {
+      typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
 
-    //   if (map_it == data->k_to_iterators.end()) {
-    //     std::deque<queue_t::iterator> new_element;
-    //     if (new_element == NULL) {
-    //       throw std::exception("creation of new element of map failed"); //think if needed
-    //     }
-    //     (*new_element).push_back(list_it);
-    //     if ((*new_element).size() != 1) {
-    //       throw std::exception("addition to map element failed");
-    //     }
-    //     data->k_to_iterators.insert(*new_element);
-    //   }
-    //   else {
-    //     size_t size = (*map_it).size();
-    //     (*map_it).push_back(list_it);
-    //     if (size != (*map_it).size()) {
-    //       throw std::exception("addition to map element failed");
-    //     }
-    //   }
-    // }
-    // catch (const std::exception& e) {
-    //   if (new_element != NULL) {
-    //   }
-    //   data->queue.erase(list_it);
-    //   throw e;
-    // }
-    // modify_and_rollback();
+      if (map_it == k_to_iterators.end()) {
+        typename std::deque<typename queue_t::iterator> new_element;
+        new_element.push_back(list_it);
+        list_it->first = &(k_to_iterators.insert(new_element).first->first);
+      } else {
+        size_t size = (*map_it).size();
+        (*map_it).push_back(list_it);
+        list_it->first = &(map_it->first);
+      }
+    }
+    catch (const std::exception& e) {
+      queue.erase(list_it);
+      throw e;
+    }
   }
 
   void pop() {
@@ -367,22 +343,11 @@ private:
     }
   };
 
-  std::shared_ptr<data_t> data;
-
-
-  void modify() {
-    // if (queue.use_count() == 0) {
-    //   queue = std::make_shared<queue_t>();
-    // }
-    // if (k_to_iterators.use_count() == 0) {
-    //   k_to_iterators = std::make_shared<k_to_iterators_t>();
-    // }
-    // if (queue.use_count() > 1 || k_to_iterators.use_count() > 1) { /// create a copy
-    //   queue = std::make_shared<queue_t>(queue_t(*queue));
-    //   k_to_iterators =
-    //       std::make_shared<k_to_iterators_t>(k_to_iterators_t(*k_to_iterators));
-    // }
+  auto deref(auto &entry) {
+    return {*(entry.first), entry.second};
   }
+
+  std::shared_ptr<data_t> data;
 };
 
 #endif
