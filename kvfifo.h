@@ -236,95 +236,47 @@ private:
   }
 
   void pop() {
-    // if (data->queue.empty()) {
-    //   throw std::invalid_argument("queue is empty");
-    // }
-    // try {
-    //   k_to_iterators_t::iterator map_it = data->k_to_iterators.find(data->queue.front());
-    //   modify()
-    //   if (map_it == data->k_to_iterators.end()) {
-    //     throw std::invalid_argument();
-    //   }
-    //   it_t list_it = (*map_it).front();
-    //   if ((*map_it).size() == 1) {
-    //     data->k_to_iterators.erase(map_it);
-    //   }
-    //   else {
-    //     (*map_it).erase((*map_it).begin());
-    //   }
-    //   data->queue.erase(list_it);
-
-    // }
-    // catch (const std::exception& e) {
-    //   throw e;
-    // }
+    if (queue.empty()) {
+      throw std::invalid_argument("queue is empty");
+    }
+    typename k_to_iterators_t::iterator map_it = k_to_iterators.find(queue.front());
+    if (map_it == k_to_iterators.end()) {
+      throw std::invalid_argument("problem with finding key in map");
+    }
+    it_t list_it = map_it->front();
+    if (map_it->size() == 1) {
+      k_to_iterators.erase(map_it);
+    } else {
+      map_it->erase(map_it->begin());
+    }
+    queue.erase(list_it);
   }
 
   void pop(K const &k) {
-    // try {
-    //   k_to_iterators_t::iterator map_it = data->k_to_iterators.find(k);
-    //   if (map_it == data->k_to_iterators.end()) {
-    //     throw std::invalid_argument();
-    //   }
-    //   modify();
-    //   it_t list_it = (*map_it).front();
-    //   if ((*map_it).size() == 1) {
-    //     data->k_to_iterators.erase(map_it);
-    //   }
-    //   else {
-    //     (*map_it).erase((*map_it).begin());
-    //   }
-    //   data->queue.erase(list_it); // no exception
-    // }
-    // catch (const std::exception& e) {
-    //   throw e;
-    // }
+    typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
+    if (map_it == k_to_iterators.end()) {
+      throw std::invalid_argument();
+    }
+    it_t list_it = map_it->front();
+    if (map_it->size() == 1) {
+      k_to_iterators.erase(map_it);
+    } else {
+      map_it->erase(map_it->begin());
+    }
+    data->queue.erase(list_it);
   }
 
   void move_to_back(K const &k) {
-    // try {
-    //   k_to_iterators_t::iterator map_it = (*k_to_iterators).find(k);
-    // }
-    // catch (const std::exception& e) {
-    //   throw e;
-    // }
-    // size_t size = (*map_it).size();
-    // size_t moved = 0;
-    // deque_it_t::iterator deq_it = (*map_it).begin();
-    // try {
-    //   std::deque<queue_t::iterator> new_element;
-    //   k_iterator adding_helper = data->queue.end();
-    //   std::prev(adding_helper);
-    //   while (moved + 1 < size) {
-    //     data->queue.push_back(*deq_it);
-    //     moved++;
-    //     deq_it = std::next(deq_it);
-    //     adding_helper = std::next(adding_helper);
-    //     new_element.push_back(adding_helper);
-    //   }
-    // }
-    // catch (const std::exception& e) {
-    //   k_iterator removing_helper = data->queue.end();
-    //   std::prev(removing_helper);
-    //   while (moved > 0) {
-    //     data->queue.erase(removing_helper);
-    //     removing_helper = std::prev(removing_helper);
-    //     moved--;
-    //   }
-    //   throw e;
-    // }
-    // modify_and_goback(); 
-    // std::swap(*map_it, new_element);
-    // std::deque<queue_t::iterator>::iterator helper = new_element.begin();
-    // for (size_t i = 0; i < new_element.size(); i++) {
-    //   data->queue.erase(helper);
-    //   helper = std::next(helper);
-    // }
+    typename k_to_iterators_t::iterator map_it = k_to_iterators->find(k);
+    if (map_it == k_to_iterators->end()) {
+      return;
+    }
+    for (auto &it_in_list: *map_it) { /// maybe iterating through deque may throw exception
+      queue.splice(queue.end(), queue, it_in_list);
+    }
   }
-  };
 
-  // implement k_iterator
-  
+  };
 
   struct Guard {
     std::shared_ptr<data_t> data;
