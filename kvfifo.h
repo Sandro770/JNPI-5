@@ -10,6 +10,7 @@
 #include <list>
 #include <functional>
 #include <stdexcept>
+#include <iterator>
 
 using namespace std;
 
@@ -21,12 +22,14 @@ public:
   using deque_it_t = std::deque<it_t>;
   using k_to_iterators_t = std::map<K, deque_it_t>;
   
-  // Create wrapper iterator for k_to_iterators_t iterator
-  
+  // Create wrapper iterator for k_to_iterators_t iterator  
 
-  class k_iterator {
+  class k_iterator : iterator<bidirectional_iterator_tag, K> {
   public:
+    using difference_type = k_to_iterators_t::iterator::difference_type;
+    using value_type = K;
 
+    k_iterator() = default;
 
     k_iterator(k_to_iterators_t::iterator it) : it(it) { }
     k_iterator& operator++() {
