@@ -312,7 +312,7 @@ private:
     void move_to_back(K const &k) {
       typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
       if (map_it == k_to_iterators.end()) {
-        return;
+        throw std::invalid_argument("this key doesn't exist");
       }
 
       for (auto const &it_in_list :
