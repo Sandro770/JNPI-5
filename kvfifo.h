@@ -89,7 +89,7 @@ public:
     }
   }
 
-  kvfifo(kvfifo &&other) noexcept : data(std::move(other.data)) {}
+  kvfifo(kvfifo &&other) noexcept : data(std::move(other.data)) { other.data = empty_data;}
 
   kvfifo &operator=(kvfifo other) noexcept {
     data = std::move(other.data);
@@ -221,7 +221,7 @@ public:
     return std::pair<K const &, V &>(k, v);
   }
 
-  size_t size() const noexcept { return data->queue.size(); }
+  size_t size() const noexcept { return data.use_count() > 0 ? data->queue.size() : 0; }
 
   bool empty() const noexcept { return size() == 0; }
 
@@ -355,8 +355,8 @@ private:
 
     void accept() { swap(data, orig_data); }
   };
-
   std::shared_ptr<data_t> data;
+  std::shared_ptr<data_t> empty_data = std::make_shared<data_t>();
 };
 
 #endif
