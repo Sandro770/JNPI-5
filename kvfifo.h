@@ -213,11 +213,11 @@ public:
   }
 
   k_iterator k_begin() const noexcept {
-    return data->queue.begin();
+    return k_iterator(data->k_to_iterators.begin());
   } 
 
   k_iterator k_end() const noexcept {
-    return data->queue.end();
+    return k_iterator(data->k_to_iterators.end());
   }
 private:
   static_assert(std::bidirectional_iterator<k_iterator>);
