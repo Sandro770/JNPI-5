@@ -16,6 +16,7 @@
 template <typename K, typename V> class kvfifo {
 public:
   void print() const {
+    return;
     int x = 0;
     for (auto &mapit : data->k_to_iterators)
       x += mapit.second.size();
@@ -83,7 +84,7 @@ public:
                  : other.data) {
     if (other.data->given_reference) {
 
-      std::cout << "copying in constructor" << std::endl;
+      // std::cout << "copying in constructor" << std::endl;
       data->given_reference = false;
     }
   }
@@ -160,7 +161,7 @@ public:
       throw std::invalid_argument("queue is empty");
     }
 
-    auto entry = data->queue.back();
+    auto &entry = data->queue.back();
 
     return std::pair<K const &, V const &>(*(entry.first), entry.second);
   }
@@ -319,24 +320,24 @@ private:
                ->second) { /// maybe iterating through deque may throw exception
         queue.splice(queue.end(), queue, it_in_list);
 
-        std::cerr << "moving " << *it_in_list->first << ' '
-                  << it_in_list->second << " to back" << std::endl;
+        // std::cerr << "moving " << *it_in_list->first << ' '
+        //           << it_in_list->second << " to back" << std::endl;
       }
 
       // print queue after moving
-      for (auto const &it : queue) {
-        std::cerr << "after moving " << *(it.first) << ' ' << it.second
-                  << " to back" << std::endl;
-        std::cerr << queue.size();
-      }
+      // for (auto const &it : queue) {
+        // std::cerr << "after moving " << *(it.first) << ' ' << it.second
+        //           << " to back" << std::endl;
+        // std::cerr << queue.size();
+      // }
     }
     data_t() = default;
     // copy constructor 
     data_t(data_t const &other) : given_reference(false) {
-      for (auto it : other.queue) {
+      for (auto const& it : other.queue) {
         this->push(*(it.first), it.second);
       }
-      std::cerr <<"---------------deep copy----------------"<<std::endl;
+      // std::cerr <<"---------------deep copy----------------"<<std::endl;
     }
   };
 
@@ -346,10 +347,8 @@ private:
 
     Guard(std::shared_ptr<data_t> &data_ptr) : orig_data(data_ptr) {
       if (data_ptr.use_count() > 1) {
-        std::cerr << "copying data" << std::endl;
         data = std::make_shared<data_t>(*data_ptr);
       } else {
-        std::cerr << "not copying data" << std::endl;
         data = data_ptr;
       }
     }
