@@ -3,8 +3,6 @@
 
 #include <concepts>
 #include <deque>
-#include <functional>
-#include <iostream>
 #include <iterator>
 #include <list>
 #include <map>
@@ -15,24 +13,6 @@
 
 template <typename K, typename V> class kvfifo {
 public:
-  void print() const {
-    return;
-    int x = 0;
-    
-    for (auto &mapit : data->k_to_iterators) {
-      x += mapit.second.size();
-    }
-    
-    std::cerr << "mapsize: " << x << "\n";
-    std::cerr << "queue:\n";
-    
-    for (auto &kv : data->queue) {
-      std::cerr << *kv.first << " " << kv.second << std::endl;
-    }
-    
-    std::cerr << "end " << std::endl;
-  }
-
   using queue_t = std::list<std::pair<const K *, V>>;
   using it_t = typename queue_t::iterator;
   using deque_it_t = std::deque<it_t>;
@@ -91,7 +71,9 @@ public:
     }
   }
 
-  kvfifo(kvfifo &&other) noexcept : data(std::move(other.data)) { other.data = empty_data;}
+  kvfifo(kvfifo &&other) noexcept : data(std::move(other.data)) {
+    other.data = empty_data;
+  }
 
   kvfifo &operator=(kvfifo other) noexcept {
     data = std::move(other.data);
@@ -143,7 +125,6 @@ public:
 
     return std::pair<K const &, V &>(*(entry.first), entry.second);
   }
-
 
   std::pair<K const &, V &> back() {
     if (data->queue.empty()) {
@@ -222,14 +203,16 @@ public:
     if (queue_it == data->k_to_iterators.end()) {
       throw std::invalid_argument("key not found");
     }
-    
+
     K const &k = queue_it->first;
     V &v = (queue_it->second).back()->second;
 
     return std::pair<K const &, V &>(k, v);
   }
 
-  size_t size() const noexcept { return data.use_count() > 0 ? data->queue.size() : 0; }
+  size_t size() const noexcept {
+    return data.use_count() > 0 ? data->queue.size() : 0;
+  }
 
   bool empty() const noexcept { return size() == 0; }
 
@@ -239,7 +222,7 @@ public:
     if (queue_it == data->k_to_iterators.end()) {
       return 0;
     }
-    
+
     return queue_it->second.size();
   }
 
@@ -292,43 +275,43 @@ private:
 
       typename k_to_iterators_t::iterator map_it =
           k_to_iterators.find(*(queue.front().first));
-      
+
       if (map_it == k_to_iterators.end()) {
         throw std::invalid_argument("problem with finding key in map");
       }
-      
+
       it_t list_it = map_it->second.front();
-      
+
       if (map_it->second.size() == 1) {
         k_to_iterators.erase(map_it);
       } else {
         map_it->second.erase(map_it->second.begin());
       }
-      
+
       queue.erase(list_it);
     }
 
     void pop(K const &k) {
       typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
-      
+
       if (map_it == k_to_iterators.end()) {
         throw std::invalid_argument("this key doesn't exist");
       }
-      
+
       it_t list_it = map_it->second.front();
-      
+
       if (map_it->second.size() == 1) {
         k_to_iterators.erase(map_it);
       } else {
         map_it->second.erase(map_it->second.begin());
       }
-      
+
       queue.erase(list_it);
     }
 
     void move_to_back(K const &k) {
       typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
-      
+
       if (map_it == k_to_iterators.end()) {
         throw std::invalid_argument("this key doesn't exist");
       }
@@ -337,11 +320,11 @@ private:
         queue.splice(queue.end(), queue, it_in_list);
       }
     }
-    
+
     data_t() = default;
 
     data_t(data_t const &other) : given_reference(false) {
-      for (auto const& it : other.queue) {
+      for (auto const &it : other.queue) {
         this->push(*(it.first), it.second);
       }
     }
@@ -351,7 +334,8 @@ private:
     std::shared_ptr<data_t> data, &orig_data;
     bool modifies;
 
-    Guard(std::shared_ptr<data_t> &data_ptr, bool modifies) : orig_data(data_ptr), modifies(modifies) {
+    Guard(std::shared_ptr<data_t> &data_ptr, bool modifies)
+        : orig_data(data_ptr), modifies(modifies) {
       if (data_ptr.use_count() > 1) {
         data = std::make_shared<data_t>(*data_ptr);
       } else {
@@ -359,10 +343,14 @@ private:
       }
     }
 
-    void accept() { swap(data, orig_data); if (modifies) { data->given_reference = false; } }
+    void accept() {
+      swap(data, orig_data);
+      if (modifies) {
+        data->given_reference = false;
+      }
+    }
   };
-  std::shared_ptr<data_t> data;
-  std::shared_ptr<data_t> empty_data = std::make_shared<data_t>();
+  std::shared_ptr<data_t> data, empty_data = std::make_shared<data_t>();
 };
 
 #endif
