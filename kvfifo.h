@@ -12,12 +12,12 @@
 #include <utility>
 
 template <typename K, typename V> class kvfifo {
-public:
+private:
   using queue_t = std::list<std::pair<const K *, V>>;
   using it_t = typename queue_t::iterator;
   using deque_it_t = std::deque<it_t>;
   using k_to_iterators_t = std::map<K, deque_it_t>;
-
+public:
   class k_iterator {
   public:
     using difference_type =
