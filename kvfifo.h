@@ -18,13 +18,18 @@ public:
   void print() const {
     return;
     int x = 0;
-    for (auto &mapit : data->k_to_iterators)
+    
+    for (auto &mapit : data->k_to_iterators) {
       x += mapit.second.size();
+    }
+    
     std::cerr << "mapsize: " << x << "\n";
     std::cerr << "queue:\n";
+    
     for (auto &kv : data->queue) {
       std::cerr << *kv.first << " " << kv.second << std::endl;
     }
+    
     std::cerr << "end " << std::endl;
   }
 
@@ -32,8 +37,6 @@ public:
   using it_t = typename queue_t::iterator;
   using deque_it_t = std::deque<it_t>;
   using k_to_iterators_t = std::map<K, deque_it_t>;
-
-  // Create wrapper iterator for k_to_iterators_t iterator
 
   class k_iterator : std::iterator<std::bidirectional_iterator_tag, K> {
   public:
@@ -44,6 +47,7 @@ public:
     k_iterator() = default;
 
     k_iterator(typename k_to_iterators_t::iterator it) : it(it) {}
+
     k_iterator &operator++() {
       ++it;
       return *this;
@@ -83,8 +87,6 @@ public:
                  ? std::make_shared<data_t>(*(other.data))
                  : other.data) {
     if (other.data->given_reference) {
-
-      // std::cout << "copying in constructor" << std::endl;
       data->given_reference = false;
     }
   }
@@ -170,6 +172,7 @@ public:
     Guard g(data);
 
     auto queue_it = g.data->k_to_iterators.find(key);
+
     if (queue_it == g.data->k_to_iterators.end()) {
       throw std::invalid_argument("key not found");
     }
@@ -185,18 +188,21 @@ public:
 
   std::pair<K const &, V const &> first(K const &key) const {
     auto queue_it = data->k_to_iterators.find(key);
+
     if (queue_it == data->k_to_iterators.end()) {
       throw std::invalid_argument("key not found");
     }
+
     K const &k = queue_it->first;
     V const &v = (*(queue_it->second).begin())->second;
+
     return std::pair<K const &, V const &>(k, v);
   }
 
   std::pair<K const &, V &> last(K const &key) {
     Guard g(data);
-
     auto queue_it = g.data->k_to_iterators.find(key);
+
     if (queue_it == g.data->k_to_iterators.end()) {
       throw std::invalid_argument("key not found");
     }
@@ -212,9 +218,11 @@ public:
 
   std::pair<K const &, V const &> last(K const &key) const {
     auto queue_it = data->k_to_iterators.find(key);
+
     if (queue_it == data->k_to_iterators.end()) {
       throw std::invalid_argument("key not found");
     }
+    
     K const &k = queue_it->first;
     V &v = (queue_it->second).back()->second;
 
@@ -227,9 +235,11 @@ public:
 
   size_t count(K const &k) const {
     auto queue_it = data->k_to_iterators.find(k);
+
     if (queue_it == data->k_to_iterators.end()) {
       return 0;
     }
+    
     return queue_it->second.size();
   }
 
@@ -254,9 +264,7 @@ private:
     void push(K const &k, V const &v) {
       queue.push_back(std::pair<K *, V>(NULL, v));
 
-      it_t list_it =
-          std::prev(queue.end()); // throws only when container is empty which
-                                  // we have a guarantee it isn't i think
+      it_t list_it = std::prev(queue.end());
 
       try {
         typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
@@ -281,63 +289,61 @@ private:
       if (queue.empty()) {
         throw std::invalid_argument("queue is empty");
       }
+
       typename k_to_iterators_t::iterator map_it =
           k_to_iterators.find(*(queue.front().first));
+      
       if (map_it == k_to_iterators.end()) {
         throw std::invalid_argument("problem with finding key in map");
       }
+      
       it_t list_it = map_it->second.front();
+      
       if (map_it->second.size() == 1) {
         k_to_iterators.erase(map_it);
       } else {
         map_it->second.erase(map_it->second.begin());
       }
+      
       queue.erase(list_it);
     }
 
     void pop(K const &k) {
       typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
+      
       if (map_it == k_to_iterators.end()) {
         throw std::invalid_argument("this key doesn't exist");
       }
+      
       it_t list_it = map_it->second.front();
+      
       if (map_it->second.size() == 1) {
         k_to_iterators.erase(map_it);
       } else {
         map_it->second.erase(map_it->second.begin());
       }
+      
       queue.erase(list_it);
     }
 
     void move_to_back(K const &k) {
       typename k_to_iterators_t::iterator map_it = k_to_iterators.find(k);
+      
       if (map_it == k_to_iterators.end()) {
-        throw std::invalid_argument("this key doesn't exist");
+        return;
       }
 
-      for (auto const &it_in_list :
-           map_it
-               ->second) { /// maybe iterating through deque may throw exception
+      for (auto const &it_in_list : map_it->second) {
         queue.splice(queue.end(), queue, it_in_list);
-
-        // std::cerr << "moving " << *it_in_list->first << ' '
-        //           << it_in_list->second << " to back" << std::endl;
       }
-
-      // print queue after moving
-      // for (auto const &it : queue) {
-        // std::cerr << "after moving " << *(it.first) << ' ' << it.second
-        //           << " to back" << std::endl;
-        // std::cerr << queue.size();
-      // }
     }
+    
     data_t() = default;
-    // copy constructor 
+
     data_t(data_t const &other) : given_reference(false) {
       for (auto const& it : other.queue) {
         this->push(*(it.first), it.second);
       }
-      // std::cerr <<"---------------deep copy----------------"<<std::endl;
     }
   };
 
