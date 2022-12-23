@@ -99,42 +99,28 @@ public:
   }
 
   void push(K const &k, V const &v) {
-    Guard g(data);
+    Guard g(data, true);
     g.data->push(k, v);
     g.accept();
   }
 
   void pop() {
-    Guard g(data);
+    Guard g(data, true);
     g.data->pop();
     g.accept();
   }
 
   void pop(K const &k) {
-    Guard g(data);
+    Guard g(data, true);
     g.data->pop(k);
     g.accept();
   }
 
   void move_to_back(K const &k) {
-    Guard g(data);
+    Guard g(data, true);
     g.data->move_to_back(k);
     g.accept();
   }
-
-  std::pair<K const &, V &> front() {
-    if (data->queue.empty()) {
-      throw std::invalid_argument("queue is empty");
-    }
-
-    Guard g(data);
-    auto &entry = g.data->queue.front();
-    g.data->given_reference = true;
-    g.accept();
-
-    return std::pair<K const &, V &>(*(entry.first), entry.second);
-  }
-
   std::pair<K const &, V const &> front() const {
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
@@ -145,12 +131,26 @@ public:
     return std::pair<K const &, V const &>(*(entry.first), entry.second);
   }
 
+  std::pair<K const &, V &> front() {
+    if (data->queue.empty()) {
+      throw std::invalid_argument("queue is empty");
+    }
+
+    Guard g(data, false);
+    auto &entry = g.data->queue.front();
+    g.data->given_reference = true;
+    g.accept();
+
+    return std::pair<K const &, V &>(*(entry.first), entry.second);
+  }
+
+
   std::pair<K const &, V &> back() {
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
 
-    Guard g(data);
+    Guard g(data, false);
     auto &entry = g.data->queue.back();
     g.data->given_reference = true;
     g.accept();
@@ -169,7 +169,7 @@ public:
   }
 
   std::pair<K const &, V &> first(K const &key) {
-    Guard g(data);
+    Guard g(data, false);
 
     auto queue_it = g.data->k_to_iterators.find(key);
 
@@ -200,7 +200,7 @@ public:
   }
 
   std::pair<K const &, V &> last(K const &key) {
-    Guard g(data);
+    Guard g(data, false);
     auto queue_it = g.data->k_to_iterators.find(key);
 
     if (queue_it == g.data->k_to_iterators.end()) {
@@ -348,10 +348,10 @@ private:
   };
 
   struct Guard {
-    std::shared_ptr<data_t> data;
-    std::shared_ptr<data_t> &orig_data;
+    std::shared_ptr<data_t> data, &orig_data;
+    bool modifies;
 
-    Guard(std::shared_ptr<data_t> &data_ptr) : orig_data(data_ptr) {
+    Guard(std::shared_ptr<data_t> &data_ptr, bool modifies) : orig_data(data_ptr), modifies(modifies) {
       if (data_ptr.use_count() > 1) {
         data = std::make_shared<data_t>(*data_ptr);
       } else {
@@ -359,7 +359,7 @@ private:
       }
     }
 
-    void accept() { swap(data, orig_data); }
+    void accept() { swap(data, orig_data); if (modifies) { data->given_reference = false; } }
   };
   std::shared_ptr<data_t> data;
   std::shared_ptr<data_t> empty_data = std::make_shared<data_t>();
