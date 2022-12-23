@@ -18,7 +18,7 @@ public:
   using deque_it_t = std::deque<it_t>;
   using k_to_iterators_t = std::map<K, deque_it_t>;
 
-  class k_iterator : std::iterator<std::bidirectional_iterator_tag, K> {
+  class k_iterator {
   public:
     using difference_type =
         typename k_to_iterators_t::iterator::difference_type;
