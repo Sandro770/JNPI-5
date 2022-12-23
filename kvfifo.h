@@ -11,6 +11,7 @@
 #include <functional>
 #include <stdexcept>
 #include <iterator>
+#include <iostream>
 
 template <typename K, typename V> 
 class kvfifo{
@@ -69,7 +70,10 @@ public:
 
   kvfifo() : data(std::make_shared<data_t>()) { }
 
-  kvfifo(kvfifo const &other) : data(other.data->given_reference ? std::make_shared<data_t> (*(other.data)) : other.data) { data->given_reference = false; }
+  kvfifo(kvfifo const &other) : data(other.data->given_reference ? std::make_shared<data_t> (*(other.data)) : other.data) { 
+    if (other.data->given_reference) 
+      data->given_reference = false;
+  }
 
   kvfifo(kvfifo &&other) noexcept : data(std::move(other.data))  { }
 
@@ -106,7 +110,11 @@ public:
     if (data->queue.empty()) {
       throw std::invalid_argument("queue is empty");
     }
-    auto entry = data->queue.front();
+
+    Guard g(data);
+    auto &entry = g.data->queue.front();
+    g.data->given_reference = true;
+    g.accept();
 
     return std::pair<K const &, V &>(*(entry.first), entry.second);
   }
@@ -116,7 +124,7 @@ public:
       throw std::invalid_argument("queue is empty");
     }
 
-    auto entry = data->queue.front();
+    auto &entry = data->queue.front();
 
     return std::pair<K const &, V const &>(*(entry.first), entry.second);
   }
@@ -126,7 +134,10 @@ public:
       throw std::invalid_argument("queue is empty");
     }
 
-    auto entry = data->queue.back();
+    Guard g(data);
+    auto &entry = g.data->queue.back();
+    g.data->given_reference = true;
+    g.accept();
 
     return std::pair<K const &, V &>(*(entry.first), entry.second);
   }
@@ -148,11 +159,13 @@ public:
     if (queue_it == g.data->k_to_iterators.end()) {
       throw std::invalid_argument("key not found");
     }
-
+    
+    const K k = *(*(queue_it->second).begin())->first;
+    V &v = (*(queue_it->second).begin())->second;
+    
     g.data->given_reference = true;
     g.accept();
-    const K k = *(*(queue_it->second).begin())->first;
-    V v = (*(queue_it->second).begin())->second;
+
     return std::pair<K const &, V &>(k, v);
   }
 
@@ -162,8 +175,8 @@ public:
       throw std::invalid_argument("key not found");
     }
     const K k = *(*(queue_it->second).begin())->first;
-    V v = (*(queue_it->second).begin())->second;
-    return std::pair<K const &, V &>(k, v);
+    V const & v = (*(queue_it->second).begin())->second;
+    return std::pair<K const &, V const &>(k, v);
   }
 
   std::pair<K const &, V &> last(K const &key) {
@@ -174,11 +187,12 @@ public:
       throw std::invalid_argument("key not found");
     }
 
+    const K &k = *(queue_it->second).back()->first;
+    V &v = (queue_it->second).back()->second;
+
     g.data->given_reference = true;
     g.accept();
 
-    const K k = *(queue_it->second).back()->first;
-    V v = (queue_it->second).back()->second;
     return std::pair<K const &, V &>(k, v);
   }
 
@@ -187,8 +201,8 @@ public:
     if (queue_it == data->k_to_iterators.end()) {
       throw std::invalid_argument("key not found");
     }
-    const K k = *(queue_it->second).back()->first;
-    V v = (queue_it->second).back()->second;
+    const K &k = *(queue_it->second).back()->first;
+    V &v = (queue_it->second).back()->second;
     return std::pair<K const &, V &>(k, v);
   }
   
@@ -299,8 +313,10 @@ private:
 
     Guard(std::shared_ptr<data_t> &data_ptr) : orig_data(data_ptr) {
       if (data_ptr.use_count() > 1) {
+        std::cerr << "copying data" << std::endl;
         data = std::make_shared<data_t>(*data_ptr);
       } else {
+        std::cerr << "not copying data" << std::endl;
         data = data_ptr;
       }
     }
